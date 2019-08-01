@@ -21,6 +21,7 @@ import (
 
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/sirupsen/logrus"
+	"github.com/t2bot/matrix-room-directory-server/db/migrations"
 )
 
 type Database struct {
@@ -42,6 +43,7 @@ func Setup(dbUrl string) error {
 
 	fnCalls := make([]func() error, 0)
 	fnCalls = append(fnCalls, func() error { return prepareMigrations(dbInstance.db) })
+	fnCalls = append(fnCalls, func() error { return applyMigration(dbInstance.db, migrations.Up20190731205945AddBasicTables) })
 	fnCalls = append(fnCalls, func() error { return prepareStatements(dbInstance.db) })
 
 	for _, fn := range fnCalls {

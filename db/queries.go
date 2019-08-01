@@ -22,5 +22,12 @@ import (
 
 var statements = map[string]*sql.Stmt{}
 
+const selectAllRooms = "selectAllRooms"
+const upsertRoom = "upsertRoom"
+const deleteRoom = "deleteRoom"
+
 var queries = map[string]string{
+	selectAllRooms: "SELECT room_id, canonical_alias, name, topic, avatar_url, joined_count, world_readable, guests_can_join FROM listed_rooms;",
+	upsertRoom:     "INSERT INTO listed_rooms (room_id, canonical_alias, name, topic, avatar_url, joined_count, world_readable, guests_can_join) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (room_id) DO UPDATE SET canonical_alias = $2, name = $3, topic = $4, avatar_url = $5, joined_count = $6, world_readable = $7, guests_can_join = $8;",
+	deleteRoom:     "DELETE FROM listed_rooms WHERE room_id = $1;",
 }

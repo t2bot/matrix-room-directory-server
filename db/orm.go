@@ -15,3 +15,46 @@
  */
 
 package db
+
+import (
+	"database/sql"
+
+	"github.com/t2bot/matrix-room-directory-server/db/models"
+)
+
+func GetRooms() ([]*models.DirectoryRoom, error) {
+	r, err := statements[selectAllRooms].Query()
+	if err == sql.ErrNoRows {
+		return make([]*models.DirectoryRoom, 0), nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*models.DirectoryRoom
+	for r.Next() {
+		v := &models.DirectoryRoom{}
+		err = r.Scan(&v.RoomID, &v.CanonicalAlias, &v.Name, &v.Topic, &v.AvatarUrl, &v.JoinedMembers, &v.WorldReadable, &v.GuestsCanJoin)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return results, nil
+}
+
+func UpsertRoom(roomId string, canonicalAlias string, name string, topic string, avatarUrl string, joinedMembers int, worldReadable bool, guestsCanJoin bool) error {
+	_, err := statements[upsertRoom].Exec(roomId, canonicalAlias, name, topic, avatarUrl, joinedMembers, worldReadable, guestsCanJoin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteRoom(roomId string) error {
+	_, err := statements[deleteRoom].Exec(roomId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
