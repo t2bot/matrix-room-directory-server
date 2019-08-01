@@ -11,6 +11,8 @@ only attached to a postgres instance and does not have any on-disk requirements 
 itself.
 
 You will need to be running or otherwise have access to a [matrix-key-server](https://github.com/t2bot/matrix-key-server).
+This project also expects that you have extensive knowledge on how to set up an application service for
+your server, as demonstrated by the program arguments.
 
 This project uses Go modules and requires Go 1.12 or higher. To enable modules, set `GO111MODULE=on`.
 
@@ -21,13 +23,30 @@ cd matrix-room-directory-server
 go build -v -o bin/matrix-room-directory-server
 
 # Run
-./bin/matrix-room-directory-server -keyserver="https://keys.t2host.io" -address="0.0.0.0" -port=8080 -postgres="postgres://username:password@localhost/dbname?sslmode=disable"
+./bin/matrix-room-directory-server \
+    -keyserver="https://keys.t2host.io" \
+    -address="0.0.0.0" \
+    -port=8080 \
+    -postgres="postgres://username:password@localhost/dbname?sslmode=disable" \
+    -astoken="RandomStringForAppserviceToken" \
+    -hstoken="RandomStringForHomeserverToken" \
+    -hsurl="https://t2bot.io" \
+    -adminuser="@alice:example.org"
 ```
 
 #### Docker
 
 ```bash
-docker run -it --rm -e "ADDRESS=0.0.0.0" -e "PORT=8080" -e "KEYSERVER=https://keys.t2host.io" -e "POSTGRES=postgres://username:password@localhost/dbname?sslmode=disable" t2bot/matrix-room-directory-server
+docker run -it --rm \
+    -e "ADDRESS=0.0.0.0" \
+    -e "PORT=8080" \
+    -e "KEYSERVER=https://keys.t2host.io" \
+    -e "POSTGRES=postgres://username:password@localhost/dbname?sslmode=disable" \
+    -e "ASTOKEN=RandomStringForAppserviceToken" \
+    -e "HSTOKEN=RandomStringForHomeserverToken" \
+    -e "HSURL=https://t2bot.io" \
+    -e "ADMINUSER=@alice:example.org" \
+    t2bot/matrix-room-directory-server
 ```
 
 Build your own by checking out the repository and running `docker build -t t2bot/matrix-room-directory-server .`

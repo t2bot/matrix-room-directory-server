@@ -22,6 +22,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/t2bot/matrix-room-directory-server/api/appservice"
 	"github.com/t2bot/matrix-room-directory-server/api/federation"
 	"github.com/t2bot/matrix-room-directory-server/api/health"
 )
@@ -36,9 +37,11 @@ func Run(listenHost string, listenPort int) {
 
 	healthzHandler := handler{health.Healthz, "healthz"}
 	fedPublicRoomsHandler := handler{federation.GetPublicRooms, "federation_public_rooms"}
+	appserviceTransactionHandler := handler{appservice.ReceiveTransaction, "appservice_transaction"}
 
 	routes := make(map[string]route)
 	routes["/_matrix/federation/v1/publicRooms"] = route{"GET", fedPublicRoomsHandler}
+	routes["/_matrix/app/v1/transactions/{txnId:[^/]+}"] = route{"PUT", appserviceTransactionHandler}
 
 	for routePath, route := range routes {
 		logrus.Info("Registering route: " + route.method + " " + routePath)
