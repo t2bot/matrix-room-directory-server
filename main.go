@@ -20,6 +20,7 @@ import (
 	"github.com/namsral/flag"
 	"github.com/t2bot/matrix-room-directory-server/api"
 	"github.com/t2bot/matrix-room-directory-server/db"
+	"github.com/t2bot/matrix-room-directory-server/key_server"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/logging"
@@ -29,10 +30,14 @@ func main() {
 	logging.Setup()
 	logrus.Info("Starting up...")
 
+	keyServerUrl := flag.String("keyserver", "https://keys.t2host.io", "Key server to perform auth against")
 	pgUrl := flag.String("postgres", "postgres://username:password@localhost/dbname?sslmode=disable", "PostgreSQL database URI")
 	listenHost := flag.String("address", "0.0.0.0", "Address to listen for requests on")
 	listenPort := flag.Int("port", 8080, "Port to listen for requests on")
 	flag.Parse()
+
+	logrus.Info("Setting up key server...")
+	key_server.Setup(*keyServerUrl)
 
 	logrus.Info("Preparing database...")
 	err := db.Setup(*pgUrl)
