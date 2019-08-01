@@ -23,6 +23,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/common"
@@ -90,7 +91,7 @@ func (a *Appservice) CheckHomeserverAuth(r *http.Request) error {
 }
 
 func (a *Appservice) JoinRoom(roomIdOrAlias string) (string, error) {
-	r, err := a.doRequest("POST", "/_matrix/client/r0/join/"+roomIdOrAlias, nil)
+	r, err := a.doRequest("POST", "/_matrix/client/r0/join/"+url.QueryEscape(roomIdOrAlias), nil)
 	if err != nil {
 		return "", err
 	}
