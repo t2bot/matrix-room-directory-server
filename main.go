@@ -21,8 +21,10 @@ import (
 	"github.com/t2bot/matrix-room-directory-server/api"
 	"github.com/t2bot/matrix-room-directory-server/common"
 	"github.com/t2bot/matrix-room-directory-server/db"
+	"github.com/t2bot/matrix-room-directory-server/directory"
 	"github.com/t2bot/matrix-room-directory-server/key_server"
 	"github.com/t2bot/matrix-room-directory-server/matrix_appservice"
+	"github.com/t2bot/matrix-room-directory-server/matrix_appservice_processor"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/logging"
@@ -50,6 +52,8 @@ func main() {
 
 	logrus.Info("Setting up appservice...")
 	err := matrix_appservice.Setup(*hsUrl, *asToken, *hsToken)
+	dir := directory.New(matrix_appservice.Default)
+	matrix_appservice_processor.Default = matrix_appservice_processor.New(matrix_appservice.Default, dir)
 	if err != nil {
 		logrus.Fatal(err)
 	}

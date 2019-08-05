@@ -38,6 +38,7 @@ func GetRooms() ([]*models.DirectoryRoom, error) {
 		if err != nil {
 			return nil, err
 		}
+		results = append(results, v)
 	}
 
 	return results, nil

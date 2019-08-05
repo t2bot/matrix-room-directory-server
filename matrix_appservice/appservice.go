@@ -24,9 +24,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-room-directory-server/common"
 	"github.com/t2bot/matrix-room-directory-server/util"
 )
 
@@ -43,7 +43,7 @@ type Appservice struct {
 	homeserverUrl string
 	asToken       string
 	hsToken       string
-	userId        string
+	UserID        string
 }
 
 var Default *Appservice
@@ -53,7 +53,7 @@ func Setup(hsUrl string, asToken string, hsToken string) error {
 	if err != nil {
 		return err
 	}
-	logrus.Info("Default appservice running as ", app.userId)
+	logrus.Info("Default appservice running as ", app.UserID)
 	Default = app
 	return nil
 }
@@ -64,7 +64,7 @@ func NewAppservice(hsUrl string, asToken string, hsToken string) (*Appservice, e
 	if err != nil {
 		return nil, err
 	}
-	app.userId = userId
+	app.UserID = userId
 	return app, nil
 }
 
@@ -99,23 +99,84 @@ func (a *Appservice) JoinRoom(roomIdOrAlias string) (string, error) {
 	return r["room_id"].(string), nil
 }
 
-func (a *Appservice) ProcessEvent(ev *MinimalMatrixEvent) error {
-	if ev.Content == nil {
-		return nil
+func (a *Appservice) GetRoomState(roomId string) ([]*MinimalMatrixEvent, error) {
+	r, err := a.doArrayRequest("GET", "/_matrix/client/r0/rooms/"+url.QueryEscape(roomId)+"/state", nil)
+	if err != nil {
+		return nil, err
 	}
 
-	if ev.EventType == "m.room.member" && ev.StateKey == a.userId && ev.Sender == common.AdminUser && ev.Content["membership"].(string) == "invite" {
-		logrus.Info("Received invite from admin")
-		_, err := a.JoinRoom(ev.RoomID)
-		if err != nil {
-			logrus.Error(err)
-		}
+	enc, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
 	}
 
+	var result []*MinimalMatrixEvent
+	err = json.Unmarshal(enc, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (a *Appservice) SendReaction(roomId string, eventId string, reaction string) error {
+	body := make(map[string]interface{})
+	relationship := make(map[string]interface{})
+	relationship["rel_type"] = "m.annotation"
+	relationship["event_id"] = eventId
+	relationship["key"] = reaction
+	body["m.relates_to"] = relationship
+
+	_, err := a.doRequest("PUT", "/_matrix/client/r0/rooms/"+url.QueryEscape(roomId)+"/send/m.reaction/"+time.Now().String(), body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Appservice) SendNotice(roomId string, notice string) error {
+	body := make(map[string]interface{})
+	body["msgtype"] = "m.notice"
+	body["body"] = notice
+
+	_, err := a.doRequest("PUT", "/_matrix/client/r0/rooms/"+url.QueryEscape(roomId)+"/send/m.room.message/"+time.Now().String(), body)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (a *Appservice) doRequest(method string, path string, body interface{}) (map[string]interface{}, error) {
+	b, err := a.doRawRequest(method, path, body)
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]interface{}
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (a *Appservice) doArrayRequest(method string, path string, body interface{}) ([]interface{}, error) {
+	b, err := a.doRawRequest(method, path, body)
+	if err != nil {
+		return nil, err
+	}
+
+	var m []interface{}
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (a *Appservice) doRawRequest(method string, path string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -150,11 +211,5 @@ func (a *Appservice) doRequest(method string, path string, body interface{}) (ma
 		return nil, err
 	}
 
-	var m map[string]interface{}
-	err = json.Unmarshal(b, &m)
-	if err != nil {
-		return nil, err
-	}
-
-	return m, nil
+	return b, nil
 }

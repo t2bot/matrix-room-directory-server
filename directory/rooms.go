@@ -17,21 +17,119 @@
 package directory
 
 import (
+	"github.com/sirupsen/logrus"
+	"github.com/t2bot/matrix-room-directory-server/db"
 	"github.com/t2bot/matrix-room-directory-server/matrix_appservice"
 )
 
-func AddRoom(roomIdOrAlias string) error {
-	as := matrix_appservice.Default
-	roomId, err := as.JoinRoom(roomIdOrAlias)
+type Directory struct {
+	appservice *matrix_appservice.Appservice
+}
+
+func New(appservice *matrix_appservice.Appservice) *Directory {
+	return &Directory{appservice}
+}
+
+func (d *Directory) AddRoom(roomIdOrAlias string) error {
+	roomId, err := d.appservice.JoinRoom(roomIdOrAlias)
 	if err != nil {
 		return err
 	}
 
 	// Update also adds the room
-	return UpdateRoom(roomId)
+	return d.UpdateRoom(roomId)
 }
 
-func UpdateRoom(roomId string) error {
-	// TODO: get all state events, add to directory table
+func (d *Directory) UpdateRoom(roomId string) error {
+	logrus.Info("Updating room: " + roomId)
+
+	state, err := d.appservice.GetRoomState(roomId)
+	if err != nil {
+		return err
+	}
+
+	canonicalAlias := ""
+	name := ""
+	topic := ""
+	avatarUrl := ""
+	joinedCount := 0
+	worldReadable := false
+	guestsCanJoin := false
+	isPublic := false
+
+	for _, s := range state {
+		if s.EventType == "m.room.name" && s.StateKey == "" {
+			v, ok := s.Content["name"]
+			if !ok {
+				name = ""
+			} else {
+				name = v.(string)
+			}
+		} else if s.EventType == "m.room.avatar" && s.StateKey == "" {
+			v, ok := s.Content["url"]
+			if !ok {
+				avatarUrl = ""
+			} else {
+				avatarUrl = v.(string)
+			}
+		} else if s.EventType == "m.room.topic" && s.StateKey == "" {
+			v, ok := s.Content["topic"]
+			if !ok {
+				topic = ""
+			} else {
+				topic = v.(string)
+			}
+		} else if s.EventType == "m.room.history_visibility" && s.StateKey == "" {
+			v, ok := s.Content["history_visibility"]
+			if !ok {
+				worldReadable = false
+			} else {
+				worldReadable = v.(string) == "world_readable"
+			}
+		} else if s.EventType == "m.room.canonical_alias" && s.StateKey == "" {
+			v, ok := s.Content["alias"]
+			if !ok {
+				canonicalAlias = ""
+			} else {
+				canonicalAlias = v.(string)
+			}
+		} else if s.EventType == "m.room.guest_access" && s.StateKey == "" {
+			v, ok := s.Content["guest_access"]
+			if !ok {
+				guestsCanJoin = false
+			} else {
+				guestsCanJoin = v.(string) == "can_join"
+			}
+		} else if s.EventType == "m.room.join_rules" && s.StateKey == "" {
+			v, ok := s.Content["join_rule"]
+			if !ok {
+				isPublic = false
+			} else {
+				isPublic = v.(string) == "public"
+			}
+		} else if s.EventType == "m.room.member" && s.StateKey != "" {
+			m, ok := s.Content["membership"]
+			if ok && m.(string) == "join" {
+				joinedCount += 1
+			}
+		}
+	}
+
+	viable := isPublic && canonicalAlias != "" && name != ""
+	if !viable {
+		logrus.Info("Removing room from directory: now private")
+		_ = d.appservice.SendNotice(roomId, "This room has been removed from the directory because it is now private")
+		err = db.DeleteRoom(roomId)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	err = db.UpsertRoom(roomId, canonicalAlias, name, topic, avatarUrl, joinedCount, worldReadable, guestsCanJoin)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

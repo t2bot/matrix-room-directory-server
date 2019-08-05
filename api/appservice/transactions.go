@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/api/common"
 	"github.com/t2bot/matrix-room-directory-server/matrix_appservice"
+	"github.com/t2bot/matrix-room-directory-server/matrix_appservice_processor"
 )
 
 type Transaction struct {
@@ -51,7 +52,7 @@ func ReceiveTransaction(r *http.Request, log *logrus.Entry) interface{} {
 	}
 
 	for _, ev := range txn.Events {
-		err = matrix_appservice.Default.ProcessEvent(ev)
+		err = matrix_appservice_processor.Default.ProcessEvent(ev)
 		if err != nil {
 			log.Error(err)
 			return common.InternalServerError("failed to process event " + ev.EventID)
