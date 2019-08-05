@@ -50,9 +50,10 @@ func main() {
 	logrus.Info("Setting up key server...")
 	key_server.Setup(*keyServerUrl)
 
-	logrus.Info("Setting up appservice...")
+	logrus.Info("Setting up appservice and directory...")
 	err := matrix_appservice.Setup(*hsUrl, *asToken, *hsToken)
 	dir := directory.New(matrix_appservice.Default)
+	directory.Default = dir
 	matrix_appservice_processor.Default = matrix_appservice_processor.New(matrix_appservice.Default, dir)
 	if err != nil {
 		logrus.Fatal(err)

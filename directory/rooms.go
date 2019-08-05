@@ -19,15 +19,19 @@ package directory
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/db"
+	"github.com/t2bot/matrix-room-directory-server/db/models"
 	"github.com/t2bot/matrix-room-directory-server/matrix_appservice"
 )
 
+var Default *Directory
+
 type Directory struct {
-	appservice *matrix_appservice.Appservice
+	appservice  *matrix_appservice.Appservice
+	cachedRooms []*models.DirectoryRoom
 }
 
 func New(appservice *matrix_appservice.Appservice) *Directory {
-	return &Directory{appservice}
+	return &Directory{appservice: appservice}
 }
 
 func (d *Directory) AddRoom(roomIdOrAlias string) error {
@@ -120,6 +124,7 @@ func (d *Directory) UpdateRoom(roomId string) error {
 		logrus.Info("Removing room from directory: now private")
 		_ = d.appservice.SendNotice(roomId, "This room has been removed from the directory because it is now private")
 		err = db.DeleteRoom(roomId)
+		d.cachedRooms = nil
 		if err != nil {
 			return err
 		}
@@ -131,5 +136,20 @@ func (d *Directory) UpdateRoom(roomId string) error {
 		return err
 	}
 
+	d.cachedRooms = nil
 	return nil
+}
+
+func (d *Directory) GetRooms() ([]*models.DirectoryRoom, error) {
+	if d.cachedRooms != nil {
+		return d.cachedRooms, nil
+	}
+
+	rooms, err := db.GetRooms()
+	if err != nil {
+		return nil, err
+	}
+
+	d.cachedRooms = rooms
+	return rooms, nil
 }
