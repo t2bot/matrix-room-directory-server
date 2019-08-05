@@ -4,11 +4,16 @@ A minimal implementation of a room directory server for Matrix
 
 Support room: [#matrix-room-directory-server:t2bot.io](https://matrix.to/#/#matrix-room-directory-server:t2bot.io)
 
+**Caution**: Although this claims to be a room directory server, it is not yet recommended for full-featured deployment. 
+Check the github issues before deploying.
+
 ## Building and running
 
-The key server will automatically generate itself a key to use on startup. The process is meant to be run 
-only attached to a postgres instance and does not have any on-disk requirements other than the executable 
-itself.
+This project does not provide any guidelines on how to run this in your infrastructure. It is up to you to determine
+how best to deploy this, and how much of it actually gets deployed.
+
+The process is meant to be run only attached to a postgres instance and does not have any on-disk requirements other 
+than the executable itself.
 
 You will need to be running or otherwise have access to a [matrix-key-server](https://github.com/t2bot/matrix-key-server).
 This project also expects that you have extensive knowledge on how to set up an application service for
