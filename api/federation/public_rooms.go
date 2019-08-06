@@ -52,6 +52,11 @@ func GetPublicRooms(r *http.Request, log *logrus.Entry) interface{} {
 	destination := r.Host
 	method := r.Method
 
+	originHeader := r.Header.Get("X-Origin")
+	if originHeader != "" {
+		destination = originHeader
+	}
+
 	err := key_server.Default.CheckAuth(auth, method, urlWithQuery, destination)
 	if err != nil {
 		log.Error(err)
