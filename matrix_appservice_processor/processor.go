@@ -75,7 +75,7 @@ func (a *Processor) ProcessEvent(ev *matrix_appservice.MinimalMatrixEvent) error
 					_ = a.appservice.SendReaction(ev.RoomID, ev.EventID, "❌")
 				}
 			}
-		} else {
+		} else if strings.HasPrefix(command, "!directory") {
 			_ = a.appservice.SendReaction(ev.RoomID, ev.EventID, "❓")
 		}
 	} else if v, ok := directoryEventTypes[ev.EventType]; ok && v {
