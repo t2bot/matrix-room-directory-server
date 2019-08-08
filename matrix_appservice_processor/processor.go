@@ -103,8 +103,6 @@ func (a *Processor) ProcessEvent(ev *matrix_appservice.MinimalMatrixEvent) error
 			err := a.directory.UpdateRoom(ev.RoomID)
 			if err != nil {
 				logrus.Error(err)
-			} else {
-				_ = a.appservice.SendReaction(ev.RoomID, ev.EventID, "✔")
 			}
 		}
 	}
