@@ -17,16 +17,15 @@
 package federation
 
 import (
-	"github.com/t2bot/matrix-room-directory-server/models"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/api/common"
 	"github.com/t2bot/matrix-room-directory-server/directory"
 	"github.com/t2bot/matrix-room-directory-server/key_server"
+	"github.com/t2bot/matrix-room-directory-server/models"
 	"github.com/t2bot/matrix-room-directory-server/util"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 )
 
 type PublicRoomsResponse struct {
