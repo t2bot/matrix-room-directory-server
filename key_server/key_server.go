@@ -17,7 +17,9 @@
 package key_server
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"net/http"
 )
 
@@ -35,10 +37,15 @@ func NewKeyServer(url string) *KeyServer {
 	return &KeyServer{url}
 }
 
-func (k *KeyServer) CheckAuth(authHeader string, urlMethod string, urlWithQuery string, destinationHost string) error {
+func (k *KeyServer) CheckAuth(authHeader string, urlMethod string, urlWithQuery string, destinationHost string, body []byte) error {
 	contactPath := k.url + "/_matrix/key/unstable/check_auth"
 
-	req, err := http.NewRequest("POST", contactPath, nil)
+	var bodyStream io.Reader
+	if body != nil {
+		bodyStream = bytes.NewBuffer(body)
+	}
+
+	req, err := http.NewRequest("POST", contactPath, bodyStream)
 	if err != nil {
 		return err
 	}

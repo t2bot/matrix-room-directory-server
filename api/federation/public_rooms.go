@@ -18,6 +18,7 @@ package federation
 
 import (
 	"github.com/t2bot/matrix-room-directory-server/models"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -46,7 +47,13 @@ func GetPublicRooms(r *http.Request, log *logrus.Entry) interface{} {
 		destination = originHeader
 	}
 
-	err := key_server.Default.CheckAuth(auth, method, urlWithQuery, destination)
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		return common.InternalServerError("body not available")
+	}
+
+	err = key_server.Default.CheckAuth(auth, method, urlWithQuery, destination, b)
 	if err != nil {
 		log.Error(err)
 		return common.InternalServerError("failed to authenticate request or some other error")
