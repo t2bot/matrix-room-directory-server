@@ -61,11 +61,18 @@ func DoUpdate() error {
 		return err
 	}
 
+	r2 := make([]*models.PublicRoomEntry, 0)
+	for _, c := range r {
+		if c.RoomID != common.SpaceId {
+			r2 = append(r2, c)
+		}
+	}
+
 	// Order the rooms by size
-	sort.Slice(r, func(i int, j int) bool {
-		return r[i].JoinedCount < r[j].JoinedCount
+	sort.Slice(r2, func(i int, j int) bool {
+		return r2[i].JoinedCount > r2[j].JoinedCount
 	})
 
-	Cached = r
+	Cached = r2
 	return nil
 }
