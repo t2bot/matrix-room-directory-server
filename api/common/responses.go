@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Travis Ralston <travis@t2bot.io>
+ * Copyright 2019 - 2022 Travis Ralston <travis@t2bot.io>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,4 @@ func MethodNotAllowed() *ErrorResponse {
 
 func NotFoundError() *ErrorResponse {
 	return &ErrorResponse{"M_NOT_FOUND", "Resource Not Found", http.StatusNotFound}
-}
-
-func UnauthorizedError() *ErrorResponse {
-	return &ErrorResponse{"M_UNAUTHORIZED", "Authentication Failed", http.StatusUnauthorized}
-}
-
-func BadRequest(message string) *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN", message, http.StatusBadRequest}
 }

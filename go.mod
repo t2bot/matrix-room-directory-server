@@ -1,10 +1,11 @@
 module github.com/t2bot/matrix-room-directory-server
 
-go 1.12
+go 1.17
 
 require (
-	github.com/gorilla/mux v1.7.3
-	github.com/lib/pq v1.2.0
+	github.com/gorilla/mux v1.8.0
+	github.com/lib/pq v1.10.4
 	github.com/namsral/flag v1.7.4-pre
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.8.1
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 )

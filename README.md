@@ -1,6 +1,6 @@
 # matrix-room-directory-server
 
-A minimal implementation of a room directory server for Matrix
+A minimal implementation of a room directory server for Matrix, using a Space as a backend.
 
 Support room: [#matrix-room-directory-server:t2bot.io](https://matrix.to/#/#matrix-room-directory-server:t2bot.io)
 
@@ -19,7 +19,7 @@ You will need to be running or otherwise have access to a [matrix-key-server](ht
 This project also expects that you have extensive knowledge on how to set up an application service for
 your server, as demonstrated by the program arguments.
 
-This project uses Go modules and requires Go 1.12 or higher. To enable modules, set `GO111MODULE=on`.
+This project uses Go modules and requires Go 1.17 or higher. To enable modules, set `GO111MODULE=on`.
 
 ```bash
 # Build
@@ -32,11 +32,9 @@ go build -v -o bin/matrix-room-directory-server
     -keyserver="https://keys.t2host.io" \
     -address="0.0.0.0" \
     -port=8080 \
-    -postgres="postgres://username:password@localhost/dbname?sslmode=disable" \
-    -astoken="RandomStringForAppserviceToken" \
-    -hstoken="RandomStringForHomeserverToken" \
-    -hsurl="https://t2bot.io" \
-    -adminuser="@alice:example.org"
+    -space="#directory:example.org" \
+    -accesstoken="syt_randomstringfromserver" \
+    -hsurl="https://t2bot.io"
 ```
 
 #### Docker
@@ -46,11 +44,9 @@ docker run -it --rm \
     -e "ADDRESS=0.0.0.0" \
     -e "PORT=8080" \
     -e "KEYSERVER=https://keys.t2host.io" \
-    -e "POSTGRES=postgres://username:password@localhost/dbname?sslmode=disable" \
-    -e "ASTOKEN=RandomStringForAppserviceToken" \
-    -e "HSTOKEN=RandomStringForHomeserverToken" \
     -e "HSURL=https://t2bot.io" \
-    -e "ADMINUSER=@alice:example.org" \
+    -e "SPACE=#directory:example.org" \
+    -e "ACCESSTOKEN=syt_randomstringfromserver" \
     t2bot/matrix-room-directory-server
 ```
 

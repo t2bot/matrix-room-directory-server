@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Travis Ralston <travis@t2bot.io>
+ * Copyright 2019 - 2022 Travis Ralston <travis@t2bot.io>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,4 +16,6 @@
 
 package common
 
-var AdminUser string
+var AccessToken string
+var HomeserverUrl string
+var SpaceId string

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Travis Ralston <travis@t2bot.io>
+ * Copyright 2019 - 2022 Travis Ralston <travis@t2bot.io>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package federation
 
 import (
+	"github.com/t2bot/matrix-room-directory-server/models"
 	"net/http"
 	"strconv"
 
@@ -27,23 +28,11 @@ import (
 	"github.com/t2bot/matrix-room-directory-server/util"
 )
 
-type PublicRoomEntry struct {
-	Aliases        []string `json:"aliases"`
-	CanonicalAlias string   `json:"canonical_alias,omitempty"`
-	Name           string   `json:"name,omitempty"`
-	JoinedCount    int      `json:"num_joined_members"`
-	RoomID         string   `json:"room_id"`
-	Topic          string   `json:"topic,omitempty"`
-	WorldReadable  bool     `json:"world_readable"`
-	GuestsAllowed  bool     `json:"guest_can_join"`
-	AvatarUrl      string   `json:"avatar_url,omitempty"`
-}
-
 type PublicRoomsResponse struct {
-	Chunk           []*PublicRoomEntry `json:"chunk"`
-	NextBatchToken  string             `json:"next_batch,omitempty"`
-	PrevBatchToken  string             `json:"prev_batch,omitempty"`
-	TotalRoomsKnown int                `json:"total_room_count_estimate"`
+	Chunk           []*models.PublicRoomEntry `json:"chunk"`
+	NextBatchToken  string                    `json:"next_batch,omitempty"`
+	PrevBatchToken  string                    `json:"prev_batch,omitempty"`
+	TotalRoomsKnown int                       `json:"total_room_count_estimate"`
 }
 
 func GetPublicRooms(r *http.Request, log *logrus.Entry) interface{} {
@@ -63,11 +52,7 @@ func GetPublicRooms(r *http.Request, log *logrus.Entry) interface{} {
 		return common.InternalServerError("failed to authenticate request or some other error")
 	}
 
-	rooms, err := directory.Default.GetRooms()
-	if err != nil {
-		log.Error(err)
-		return common.InternalServerError("failed to get room list")
-	}
+	rooms := directory.Cached
 
 	limitRaw := r.URL.Query().Get("limit")
 	sinceRaw := r.URL.Query().Get("since")
@@ -110,23 +95,8 @@ func GetPublicRooms(r *http.Request, log *logrus.Entry) interface{} {
 		prevToken = strconv.Itoa(start - 1)
 	}
 
-	chunk := make([]*PublicRoomEntry, 0)
-	for _, r := range subsetRooms {
-		chunk = append(chunk, &PublicRoomEntry{
-			RoomID:         r.RoomID,
-			WorldReadable:  r.WorldReadable,
-			AvatarUrl:      r.AvatarUrl,
-			Topic:          r.Topic,
-			Name:           r.Name,
-			CanonicalAlias: r.CanonicalAlias,
-			GuestsAllowed:  r.GuestsCanJoin,
-			JoinedCount:    r.JoinedMembers,
-			Aliases:        []string{r.CanonicalAlias}, // TODO: Track aliases correctly
-		})
-	}
-
 	return &PublicRoomsResponse{
-		Chunk:           chunk,
+		Chunk:           subsetRooms,
 		NextBatchToken:  nextToken,
 		PrevBatchToken:  prevToken,
 		TotalRoomsKnown: len(rooms),

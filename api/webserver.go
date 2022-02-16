@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Travis Ralston <travis@t2bot.io>
+ * Copyright 2019 - 2022 Travis Ralston <travis@t2bot.io>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-room-directory-server/api/appservice"
 	"github.com/t2bot/matrix-room-directory-server/api/federation"
 	"github.com/t2bot/matrix-room-directory-server/api/health"
 )
@@ -37,18 +36,21 @@ func Run(listenHost string, listenPort int) {
 
 	healthzHandler := handler{health.Healthz, "healthz"}
 	fedPublicRoomsHandler := handler{federation.GetPublicRooms, "federation_public_rooms"}
-	appserviceTransactionHandler := handler{appservice.ReceiveTransaction, "appservice_transaction"}
 
-	routes := make(map[string]route)
-	routes["/_matrix/federation/v1/publicRooms"] = route{"GET", fedPublicRoomsHandler}
-	routes["/_matrix/app/v1/transactions/{txnId:[^/]+}"] = route{"PUT", appserviceTransactionHandler}
+	routes := make(map[string][]route)
+	routes["/_matrix/federation/v1/publicRooms"] = []route{
+		route{"GET", fedPublicRoomsHandler},
+		route{"POST", fedPublicRoomsHandler}, // TODO: Handle searching
+	}
 
-	for routePath, route := range routes {
-		logrus.Info("Registering route: " + route.method + " " + routePath)
-		rtr.Handle(routePath, route.handler).Methods(route.method)
+	for routePath, routes2 := range routes {
+		for _, route := range routes2 {
+			logrus.Info("Registering route: " + route.method + " " + routePath)
+			rtr.Handle(routePath, route.handler).Methods(route.method)
 
-		// This is a hack to a ensure that trailing slashes also match the routes correctly
-		rtr.Handle(routePath+"/", route.handler).Methods(route.method)
+			// This is a hack to ensure that trailing slashes also match the routes correctly
+			rtr.Handle(routePath+"/", route.handler).Methods(route.method)
+		}
 	}
 
 	rtr.Handle("/healthz", healthzHandler).Methods("OPTIONS", "GET")

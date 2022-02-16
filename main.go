@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Travis Ralston <travis@t2bot.io>
+ * Copyright 2019 - 2022 Travis Ralston <travis@t2bot.io>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,9 @@ import (
 	"github.com/namsral/flag"
 	"github.com/t2bot/matrix-room-directory-server/api"
 	"github.com/t2bot/matrix-room-directory-server/common"
-	"github.com/t2bot/matrix-room-directory-server/db"
 	"github.com/t2bot/matrix-room-directory-server/directory"
 	"github.com/t2bot/matrix-room-directory-server/key_server"
-	"github.com/t2bot/matrix-room-directory-server/matrix_appservice"
-	"github.com/t2bot/matrix-room-directory-server/matrix_appservice_processor"
+	"github.com/t2bot/matrix-room-directory-server/matrix"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-room-directory-server/logging"
@@ -34,37 +32,43 @@ func main() {
 	logging.Setup()
 	logrus.Info("Starting up...")
 
-	admin := flag.String("adminuser", "@alice:example.org", "The admin user for this directory server")
-	hsToken := flag.String("hstoken", "RandomString", "Homeserver authentication token")
-	asToken := flag.String("astoken", "RandomString", "Appservice authentication token")
+	accessToken := flag.String("accesstoken", "", "Access token to make homeserver API calls with")
 	hsUrl := flag.String("hsurl", "https://t2bot.io", "Homeserver to run against")
 	keyServerUrl := flag.String("keyserver", "https://keys.t2host.io", "Key server to perform auth against")
-	pgUrl := flag.String("postgres", "postgres://username:password@localhost/dbname?sslmode=disable", "PostgreSQL database URI")
+	spaceId := flag.String("space", "#directory:t2bot.io", "The Space to use as a room directory")
 	listenHost := flag.String("address", "0.0.0.0", "Address to listen for requests on")
 	listenPort := flag.Int("port", 8080, "Port to listen for requests on")
 	flag.Parse()
 
 	logrus.Info("Setting common variables...")
-	common.AdminUser = *admin
+	common.AccessToken = *accessToken
+	common.HomeserverUrl = *hsUrl
+	common.SpaceId = *spaceId
+
+	logrus.Info("Homeserver URL: ", common.HomeserverUrl)
+	logrus.Info("Space ID: ", common.SpaceId)
+
+	logrus.Info("Resolving Space ID to Room ID...")
+	rid, err := matrix.ResolveRoom(common.SpaceId)
+	if err != nil {
+		panic(err)
+	}
+	common.SpaceId = rid
+	logrus.Info("Space ID (revised): ", common.SpaceId)
+
+	logrus.Info("Seeing cache...")
+	err = directory.DoUpdate()
+	if err != nil {
+		panic(err)
+	}
 
 	logrus.Info("Setting up key server...")
 	key_server.Setup(*keyServerUrl)
 
-	logrus.Info("Setting up appservice and directory...")
-	err := matrix_appservice.Setup(*hsUrl, *asToken, *hsToken)
-	dir := directory.New(matrix_appservice.Default)
-	directory.Default = dir
-	matrix_appservice_processor.Default = matrix_appservice_processor.New(matrix_appservice.Default, dir)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	logrus.Info("Preparing database...")
-	err = db.Setup(*pgUrl)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
 	logrus.Info("Starting app...")
+	directory.BeginCaching()
 	api.Run(*listenHost, *listenPort)
+
+	logrus.Info("Stopping...")
+	directory.Stop()
 }
