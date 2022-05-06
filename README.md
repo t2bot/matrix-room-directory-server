@@ -2,10 +2,14 @@
 
 A minimal implementation of a room directory server for Matrix, using a Space as a backend.
 
+Configure `matrix-room-directory-server` to look at a space and it will expose all the rooms in that space under the [federation `/publicRooms`](https://spec.matrix.org/v1.1/server-server-api/#public-room-directory) endpoint. This can then be used by clients by signing into your actual homeserver, asking for the room directory for the domain this project is hosted on, and it will return the rooms in the configured space. This project is used to host the `t2bot.io` room directory for example.
+
 Support room: [#matrix-room-directory-server:t2bot.io](https://matrix.to/#/#matrix-room-directory-server:t2bot.io)
 
 **Caution**: Although this claims to be a room directory server, it is not yet recommended for full-featured deployment. 
-Check the github issues before deploying.
+Check the GitHub issues before deploying.
+
+A room directory server is simply a service that resolves aliases to room IDs, where it then identifies one or more resident servers for the calling (usually joining) server to talk to. This further extends into offering the [`/publicRooms`](https://spec.matrix.org/v1.1/server-server-api/#public-room-directory) endpoint as a directory of rooms, usually supplied by a directory server.
 
 ## Building and running
 
